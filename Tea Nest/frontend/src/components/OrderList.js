@@ -1,37 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axiosConfig'; // <-- Use the new centralized api instance
+import { Card, ListGroup, Spinner, Alert } from 'react-bootstrap';
 
 const OrderList = () => {
     const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        axios.get('http://localhost:5000/orders')
-            .then(response => setOrders(response.data))
-            .catch(error => console.log(error));
+        setLoading(true);
+        api.get('/orders') // <-- Use api instead of axios
+            .then(response => {
+                if (Array.isArray(response.data)) {
+                    setOrders(response.data);
+                }
+                setLoading(false);
+            })
+            .catch(error => {
+                console.log("Error fetching orders!", error);
+                setLoading(false);
+            });
     }, []);
+
+    if (loading) {
+        return <Spinner animation="border" />;
+    }
 
     return (
         <div>
-            <h2>Order List</h2>
-            {orders.map(order => (
-                <div key={order._id} className="card mb-3">
-                    <div className="card-header">
-                        Order ID: {order._id}
-                    </div>
-                    <div className="card-body">
-                        <h5 className="card-title">Customer: {order.customerName}</h5>
-                        <p className="card-text">Created At: {new Date(order.createdAt).toLocaleString()}</p>
-                        <h6>Items:</h6>
-                        <ul className="list-group list-group-flush">
-                            {order.items.map(item => (
-                                <li key={item.productId._id} className="list-group-item">
-                                    {item.productId.name} - Quantity: {item.quantity}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-            ))}
+            <h2 className="mb-4">Orders</h2>
+            {orders.length === 0 ? (
+                <Alert variant="info">No orders have been submitted yet.</Alert>
+            ) : (
+                orders.map(order => (
+                    <Card key={order._id} className="mb-3">
+                        <Card.Header className="d-flex justify-content-between">
+                            <strong>Customer: {order.customerName}</strong>
+                            <small className="text-muted">
+                                {new Date(order.createdAt).toLocaleString()}
+                            </small>
+                        </Card.Header>
+                        <Card.Body>
+                            <ListGroup variant="flush">
+                                {order.items.map((item, index) => (
+                                    <ListGroup.Item key={index}>
+                                        {item.productId?.name || 'Product not found'} - Quantity: {item.quantity}
+                                    </ListGroup.Item>
+                                ))}
+                            </ListGroup>
+                        </Card.Body>
+                    </Card>
+                ))
+            )}
         </div>
     );
 };

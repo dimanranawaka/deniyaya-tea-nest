@@ -23,6 +23,8 @@ connection.once('open', () => {
 // Routes
 const productsRouter = require('./routes/products');
 const ordersRouter = require('./routes/orders');
+const authRouter = require('./routes/auth');
+app.use('/auth', authRouter);
 
 app.use('/products', productsRouter);
 app.use('/orders', ordersRouter);
